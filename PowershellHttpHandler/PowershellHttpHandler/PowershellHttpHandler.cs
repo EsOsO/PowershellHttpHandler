@@ -18,29 +18,13 @@ namespace System.Web.Handlers
 
         public void ProcessRequest(HttpContext context)
         {
-            Runspace rs;
-            if (context.Session["Runspace"] == null)
-            {
-                InitialSessionState iss = InitialSessionState.CreateDefault();
-                iss.AuthorizationManager = new AuthorizationManager("PowershellHandler");
-                rs = RunspaceFactory.CreateRunspace(iss);
-                rs.Open();
-                context.Session["Runspace"] = rs;
-            }
+            Runspace rs = this.getRunspace(context);
 
-            rs = context.Session["Runspace"] as Runspace;
-            rs.SessionStateProxy.SetVariable("HttpContext", context);
-
-            String script = String.Empty;
-            using (StreamReader streamReader = new StreamReader(context.Request.PhysicalPath, Encoding.UTF8))
-            {
-                script = streamReader.ReadToEnd();
-            }
 
             using (Powershell ps = Powershell.Create())
             {
                 ps.Runspace = rs;
-                ps.AddScript(script);
+                ps.AddScript(this.getFileContent(context.Request.PhysicalPath));
                 try
                 {
                     foreach (PSObject result in ps.Invoke())
@@ -68,6 +52,48 @@ namespace System.Web.Handlers
                 }
                 ps.Dispose();
             }
+        }
+
+        private Runspace getRunspace(HttpContext context)
+        {
+            Runspace rs;
+
+            if (context.Session["Runspace"] == null)
+            {
+                InitialSessionState iss = InitialSessionState.CreateDefault();
+                iss.AuthorizationManager = new AuthorizationManager("PowershellHandler");
+                rs = RunspaceFactory.CreateRunspace(iss);
+                context.Session["Runspace"] = rs;
+                rs.Open();
+                this.configApp(context);
+            }
+
+            rs = context.Session["Runspace"] as Runspace;
+            rs.SessionStateProxy.SetVariable("HttpContext", context);
+
+            return rs;
+        }
+
+        private void configApp(HttpContext context)
+        {
+            using (Powershell ps = Powershell.Create())
+            {
+                ps.Runspace = context.Session["Runspace"] as Runspace;
+                ps.Runspace.SessionStateProxy.SetVariable("HttpContext", context);
+                ps.AddScript(this.getFileContent(String.Format("{0}\\config.ps1", context.Request.PhysicalApplicationPath)));
+                ps.Invoke();
+            }
+        }
+
+        private String getFileContent(String path)
+        {
+            String script = String.Empty;
+            using (StreamReader streamReader = new StreamReader(path, Encoding.UTF8))
+            {
+                script = streamReader.ReadToEnd();
+            }
+
+            return script;
         }
     }
 }
