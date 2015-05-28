@@ -76,12 +76,16 @@ namespace System.Web.Handlers
 
         private void configApp(HttpContext context)
         {
-            using (Powershell ps = Powershell.Create())
+            String confPath = String.Format("{0}\\config.ps1", context.Request.PhysicalApplicationPath);
+            if (File.Exists(confPath))
             {
-                ps.Runspace = context.Session["Runspace"] as Runspace;
-                ps.Runspace.SessionStateProxy.SetVariable("HttpContext", context);
-                ps.AddScript(this.getFileContent(String.Format("{0}\\config.ps1", context.Request.PhysicalApplicationPath)));
-                ps.Invoke();
+                using (Powershell ps = Powershell.Create())
+                {
+                    ps.Runspace = context.Session["Runspace"] as Runspace;
+                    ps.Runspace.SessionStateProxy.SetVariable("HttpContext", context);
+                    ps.AddScript(this.getFileContent(confPath));
+                    ps.Invoke();
+                }
             }
         }
 
