@@ -38,4 +38,4 @@ Example `index.ps1`
 The variable `$HttpContext` is passed on every page and contains the server `HttpContext` object.
 
 # Config
-If you want to configure your webapp you could place a file named `config.ps1` that will be executed on session start.
+If you want to configure your webapp you could place a file named `\App_code\config.ps1` that will be executed on session start.
