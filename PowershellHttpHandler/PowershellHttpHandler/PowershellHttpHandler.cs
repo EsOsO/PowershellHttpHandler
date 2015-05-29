@@ -19,8 +19,6 @@ namespace System.Web.Handlers
         public void ProcessRequest(HttpContext context)
         {
             Runspace rs = this.getRunspace(context);
-
-
             using (Powershell ps = Powershell.Create())
             {
                 ps.Runspace = rs;
@@ -76,7 +74,7 @@ namespace System.Web.Handlers
 
         private void configApp(HttpContext context)
         {
-            String confPath = String.Format("{0}\\config.ps1", context.Request.PhysicalApplicationPath);
+            String confPath = String.Format("{0}\\App_Code\\config.ps1", context.Request.PhysicalApplicationPath);
             if (File.Exists(confPath))
             {
                 using (Powershell ps = Powershell.Create())
